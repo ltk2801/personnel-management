@@ -14,10 +14,15 @@ import { Department } from './entities/department.entity';
 export class DepartmentsController {
   constructor(private readonly departmentsService: DepartmentsService) {}
 
-  // Get all departments
-  @Get()
-  findAll() {
-    return this.departmentsService.findAll();
+  // // Get all departments
+  // @Get()
+  // findAll() {
+  //   return this.departmentsService.findAll();
+  // }
+  // 1. Endpoint cho Dropdown (Chỉ lấy ID và Name của phòng ban)
+  @Get('select-options')
+  getSelectOptions() {
+    return this.departmentsService.getSelectOptions();
   }
 
   // Get a single department by id
