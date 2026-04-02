@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import { Department } from './entities/department.entity';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
@@ -21,20 +21,14 @@ export class DepartmentsService {
   // Các phương thức để làm việc với dữ liệu phòng ban, sẽ được gọi từ controller
   // Khi FE chỉ cần lấy dữ liệu là id và name của phòng ban
   async getSelectOptions(): Promise<IDepartmentBase[]> {
-    const departments = await this.departmentsRepository.find({
-      select: ['id', 'name'], // Chỉ lấy id và name để trả về cho FE
+    // TypeORM sẽ tự hiểu trả về mảng có cấu trúc của IDepartmentBase
+    return await this.departmentsRepository.find({
+      select: ['id', 'name'],
     });
-    console.log(departments);
-    return departments as IDepartmentBase[];
-    // return departments.map((dept) => ({
-    //   id: dept.id,
-    //   name: dept.name,
-    // }));
   }
 
   // create a new department
   create(department: Department) {
-    console.log(department);
     return this.departmentsRepository.save(department);
   }
   // find a department by id

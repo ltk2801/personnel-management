@@ -64,7 +64,7 @@ export class AuthService {
     }
 
     // 4. Generate JWT tokens
-    const payload = { username: user.username, sub: user.id };
+    const payload = { username: user.username, sub: user.id, role: user.role };
     const access_token = this.jwtService.sign(payload);
     const refresh_token = this.jwtService.sign(payload, { expiresIn: '7d' });
 
