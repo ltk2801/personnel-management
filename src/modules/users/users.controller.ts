@@ -17,4 +17,9 @@ export class UsersController {
   getSelectOptions() {
     return this.usersService.getSelectOptions();
   }
+  // GET all role user
+  @Get('roles')
+  findAllRoles() {
+    return this.usersService.findAllRoles();
+  }
 }

@@ -107,4 +107,9 @@ export class AuthService {
       );
     }
   }
+  // **** FUNCtION LOGOUT
+  async logout(userId: number): Promise<void> {
+    // clear refresh token của user trong database
+    await this.usersService.clearRefreshToken(userId.toString());
+  }
 }

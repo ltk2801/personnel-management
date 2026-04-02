@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import { User } from './entities/users.entity';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
@@ -25,5 +25,20 @@ export class UsersService {
   // ****** FUNCTION find a user by username (có thể dùng để kiểm tra đăng nhập sau này)
   async findByUsername(username: string): Promise<User> {
     return await this.userRepository.findOne({ where: { username } });
+  }
+
+  // ****** FUNCTION Get all role in table USER (để có thể hiển thị ra FE)
+  async findAllRoles(): Promise<string[]> {
+    const roles = await this.userRepository
+      .createQueryBuilder('user')
+      .select('DISTINCT user.role', 'role')
+      .getRawMany();
+    const rolesList = roles.map((r) => r.role);
+    return rolesList;
+  }
+
+  // ****** FUNCTION clear refresh token của user khi logout
+  async clearRefreshToken(userId: string): Promise<void> {
+    await this.userRepository.update(userId, { refreshToken: null });
   }
 }

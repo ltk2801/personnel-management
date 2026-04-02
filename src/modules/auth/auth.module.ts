@@ -20,6 +20,6 @@ const jwtSecret = process.env.JWT_SECRET; // Lấy giá trị JWT_SECRET từ bi
   ],
   controllers: [AuthController],
   providers: [AuthService],
-  exports: [AuthService], // Export AuthService để có thể sử dụng trong các module khác nếu cần
+  exports: [AuthService, JwtModule], // Export AuthService để có thể sử dụng trong các module khác nếu cần
 })
 export class AuthModule {}
