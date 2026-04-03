@@ -8,6 +8,7 @@ import {
   DeleteDateColumn,
 } from 'typeorm';
 import { Employee } from '../../employees/entities/employee.entity';
+import { Exclude } from 'class-transformer';
 
 @Entity('departments')
 export class Department {
@@ -35,17 +36,25 @@ export class Department {
   })
   isActive: boolean;
 
-  // --- QUAN HỆ ---
+  // --- QUAN HỆ | 1 Phòng ban có thể có nhiều Nhân Viên ---
   @OneToMany(() => Employee, (employee) => employee.department)
   employees: Employee[];
 
   // --- TRACKING (Giúp bạn quản lý dữ liệu tốt hơn) ---
   @CreateDateColumn({ name: 'created_at' })
+  // eslint-disable-next-line @typescript-eslint/no-unsafe-call
+  @Exclude()
   createdAt: Date;
 
   @UpdateDateColumn({ name: 'updated_at' })
+  @Exclude()
   updatedAt: Date;
 
-  @DeleteDateColumn({ name: 'deleted_at' }) // Hỗ trợ Soft Delete (Xóa ảo)
+  @DeleteDateColumn({ name: 'deleted_at' })
+  @Exclude() // Hỗ trợ Soft Delete (Xóa ảo)
   deletedAt: Date;
+
+  constructor(partial: Partial<Department>) {
+    Object.assign(this, partial);
+  }
 }

@@ -11,6 +11,8 @@ import { LoginUserDto } from './dto/auth-login.dto';
 import { JwtService } from '@nestjs/jwt';
 // Import bcrypt để compare lại password khi đăng nhập
 import * as bcrypt from 'bcrypt';
+// Import Employee service
+import { EmployeesService } from '../employees/employees.service';
 
 @Injectable()
 export class AuthService {
@@ -19,6 +21,7 @@ export class AuthService {
     @InjectRepository(User)
     private readonly userRepository: Repository<User>,
     private readonly jwtService: JwtService,
+    private readonly employeesService: EmployeesService,
   ) {}
 
   // ******* FUNCTION. create a new user // Đã sử dụng Dto để có thể validation dư liệu đầu vào

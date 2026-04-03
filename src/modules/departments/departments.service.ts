@@ -1,4 +1,9 @@
-import { Injectable, Logger } from '@nestjs/common';
+import {
+  ClassSerializerInterceptor,
+  Injectable,
+  Logger,
+  UseInterceptors,
+} from '@nestjs/common';
 import { Department } from './entities/department.entity';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
@@ -31,11 +36,26 @@ export class DepartmentsService {
     });
   }
 
+  // GET ALL DEPARTMENTS bao gồm ID,NAME kế thừa từ interfaceBase + thêm active
+  async getAllDepartmentsActive(): Promise<IDepartmentList[]> {
+    // TypeORM sẽ tự hiểu trả về mảng có cấu trúc của IDepartmentList
+    return await this.departmentsRepository.find({
+      select: ['id', 'name', 'description'],
+    });
+  }
+
+  // GET ALL DEPARTMENTS WITH FULL INFO
+  async getAllDepartments(): Promise<Department[]> {
+    return await this.departmentsRepository.find();
+  }
+
   // create a new department use DTO
   createDepartment(department: DepartmentCreateDto) {
     return this.departmentsRepository.save(department);
   }
-  // find a department by id
+
+  // Ví dụ khi muốn truy xuất thông tin của 1 phòng ban thì bình thường chúng ta sẽ làm như vạy
+  // find a department by id  s
   findOne(id: string) {
     return this.departmentsRepository.findOneBy({ id });
   }

@@ -5,6 +5,7 @@ import { Repository } from 'typeorm';
 
 // import các interface mình vừa tạo để có thể sử dụng gửi dữ liệu về cho FE
 import { IuserBase, IuserList } from './interfaces/users.interface';
+import { UpdateUserDto } from './dto/update-user.dto';
 
 @Injectable()
 export class UsersService {
@@ -40,5 +41,11 @@ export class UsersService {
   // ****** FUNCTION clear refresh token của user khi logout
   async clearRefreshToken(userId: string): Promise<void> {
     await this.userRepository.update(userId, { refreshToken: null });
+  }
+
+  // **** FUNCTION UPDATE USER Do ADMIN thực hiện, add EmployeeID và Lock/UnLock tài khoản
+  async updateUser(id: string, user: UpdateUserDto) {
+    await this.userRepository.update(id, user);
+    return this.userRepository.findOneBy({ id });
   }
 }

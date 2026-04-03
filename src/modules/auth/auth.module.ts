@@ -6,11 +6,13 @@ import { User } from '../users/entities/users.entity';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { JwtModule } from '@nestjs/jwt';
 import 'dotenv/config';
+import { EmployeesModule } from '../employees/employees.module';
 
 const jwtSecret = process.env.JWT_SECRET; // Lấy giá trị JWT_SECRET từ biến môi trường .env
 
 @Module({
   imports: [
+    EmployeesModule,
     UsersModule,
     TypeOrmModule.forFeature([User]),
     JwtModule.register({
