@@ -42,9 +42,7 @@ export class UsersService {
   }
 
   // ****** FUNCTION clear refresh token của user khi logout
-  async clearRefreshToken(userId: string): Promise<void> {
-    await this.userRepository.update(userId, { refreshToken: null });
-  }
+
   // ***** FUNCTION UPDATE PASSWORD
   async updatePassword(id: string, newPassword: string): Promise<void> {
     await this.userRepository.update(id, { password: newPassword });

@@ -19,6 +19,7 @@ import { RefreshTokenDto } from './dto/auth-refresh.dto';
 import { AuthGuard } from '../../common/guards/auth.guard';
 import { ChangePasswordUserDto } from './dto/auth-change-password.dto';
 import { GuestGuard } from 'src/common/guards/guest.guard';
+import { RefreshTokenGuard } from 'src/common/guards/refresh_token.guard';
 
 @Controller('auth')
 export class AuthController {
@@ -42,8 +43,9 @@ export class AuthController {
   // Refresh Token
   @HttpCode(HttpStatus.OK)
   @Post('refresh')
-  async refresh(@Body() refreshTokenDto: RefreshTokenDto) {
-    return this.authService.refreshToken(refreshTokenDto);
+  @UseGuards(RefreshTokenGuard)
+  async refresh(@Request() req) {
+    return this.authService.refreshToken(req.refresh_token);
   }
 
   // Get profile, bao ve route nay bang Authguard, chi nhung request co token hop le moi duoc lay profile
@@ -57,9 +59,9 @@ export class AuthController {
   @HttpCode(HttpStatus.OK)
   @Post('logout')
   @UseGuards(AuthGuard) // Bảo vệ route này bằng AuthGuard, chỉ những request có token hợp lệ mới được phép logout
-  async logout(@Request() req) {
-    const userId = req.user.sub; // Lấy userId từ thông tin user đã được đính kèm vào request trong AuthGuard
-    await this.authService.logout(userId);
+  async logout() {
+    // Lấy userId từ thông tin user đã được đính kèm vào request trong AuthGuard
+    await this.authService.logout();
     return {
       message: 'Đăng xuất thành công',
     };
@@ -73,6 +75,6 @@ export class AuthController {
     @Body() changePasswordUserDto: ChangePasswordUserDto,
   ) {
     const userId = req.user.sub; // lấy userId từ thông tin user được đính kèm vào request
-    await this.authService.changePassword(userId, changePasswordUserDto);
+    return await this.authService.changePassword(userId, changePasswordUserDto);
   }
 }

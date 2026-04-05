@@ -48,13 +48,6 @@ export class User {
   })
   isActive: boolean;
 
-  @Column({
-    type: 'text',
-    nullable: true,
-  })
-  @Exclude() // Ẩn refresh token
-  refreshToken: string;
-
   // --- QUAN HỆ 1-1 VỚI NHÂN VIÊN ---
   // Một User tài khoản sẽ gắn liền với một hồ sơ Nhân viên cụ thể
   @Column({ nullable: true })
