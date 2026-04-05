@@ -20,23 +20,38 @@ import { RolesGuard } from 'src/common/guards/role.guard';
 // import DTO
 import { DepartmentCreateDto } from './dto/department-create-dto';
 import { DepartmentUpdateDto } from './dto/department-update-dto';
+import {
+  ApiBearerAuth,
+  ApiBody,
+  ApiOkResponse,
+  ApiOperation,
+  ApiParam,
+  ApiTags,
+} from '@nestjs/swagger';
 
+@ApiTags('Departments')
 @Controller('departments')
 export class DepartmentsController {
   constructor(private readonly departmentsService: DepartmentsService) {}
 
   // 1. Endpoint cho Dropdown (Chỉ lấy ID và Name của phòng ban) sử dụng interface
+  @ApiOperation({ summary: 'Lay danh sach phong ban rut gon' })
+  @ApiOkResponse({ description: 'Lay danh sach thanh cong' })
   @Get('select-options')
   getSelectOptions() {
     return this.departmentsService.getSelectOptions();
   }
   // 2. Kế thừa của của interface base ( có thêm active)
+  @ApiOperation({ summary: 'Lay danh sach phong ban dang hoat dong' })
+  @ApiOkResponse({ description: 'Lay danh sach thanh cong' })
   @Get('select-options-active')
   getSelectOptionsActive() {
     return this.departmentsService.getAllDepartmentsActive();
   }
 
   // get all
+  @ApiOperation({ summary: 'Lay toan bo phong ban' })
+  @ApiOkResponse({ description: 'Lay danh sach phong ban thanh cong' })
   @Get('all')
   getAllDepartments() {
     return this.departmentsService.getAllDepartments();
@@ -45,6 +60,10 @@ export class DepartmentsController {
   // Ở đây tôi đã dùng Dto để validation dữ liệu nhập vào, nếu không sử dụng DTO, nó sẽ sử dụng các trường ở entity
   // Tiến hành phân quyền của user ở đây, chỉ có admin mới có thể tạo 1 phòng ban mới
   // Create a new department
+  @ApiOperation({ summary: 'Tao phong ban moi' })
+  @ApiBearerAuth('access-token')
+  @ApiBody({ type: DepartmentCreateDto })
+  @ApiOkResponse({ description: 'Tao phong ban thanh cong' })
   @UseGuards(AuthGuard, RolesGuard) // Bảo vệ route này bằng AuthGuard, chỉ những request có token hợp lệ mới được phép tạo phòng ban mới
   @Roles(Role.Admin) // Chỉ những user có role Admin mới được phép tạo phòng ban mới
   @Post()
@@ -53,6 +72,11 @@ export class DepartmentsController {
   }
 
   // Update a department
+  @ApiOperation({ summary: 'Cap nhat phong ban' })
+  @ApiBearerAuth('access-token')
+  @ApiParam({ name: 'id', description: 'Department ID' })
+  @ApiBody({ type: DepartmentUpdateDto })
+  @ApiOkResponse({ description: 'Cap nhat phong ban thanh cong' })
   @UseGuards(AuthGuard, RolesGuard) // Bảo vệ route này bằng AuthGuard, chỉ những request có token hợp lệ mới được phép cập nhật phòng ban
   @Roles(Role.Admin)
   @Patch(':id')
@@ -65,6 +89,10 @@ export class DepartmentsController {
   }
 
   // Delete a department
+  @ApiOperation({ summary: 'Xoa phong ban' })
+  @ApiBearerAuth('access-token')
+  @ApiParam({ name: 'id', description: 'Department ID' })
+  @ApiOkResponse({ description: 'Xoa phong ban thanh cong' })
   @UseGuards(AuthGuard, RolesGuard) // Bảo vệ route này bằng AuthGuard, chỉ những request có token hợp lệ mới được phép cập nhật phòng ban
   @Roles(Role.Admin)
   @Delete(':id')
@@ -75,6 +103,9 @@ export class DepartmentsController {
   // Find a department with full info, ParseUUIDPipe là mong nhận param vào là 1 uuid, và ép kiểu cho biến id là string
   // Vì đã sử dụng UseInterceptor và ClassSerializerInterceptor nên sẽ chỉ trả về những thuộc
   // tính không nằm trong expose ở entity
+  @ApiOperation({ summary: 'Lay chi tiet mot phong ban' })
+  @ApiParam({ name: 'id', description: 'Department ID' })
+  @ApiOkResponse({ description: 'Lay chi tiet phong ban thanh cong' })
   @UseInterceptors(ClassSerializerInterceptor)
   @Get(':id')
   async findDepartmentWithFullInfo(@Param('id', ParseUUIDPipe) id: string) {

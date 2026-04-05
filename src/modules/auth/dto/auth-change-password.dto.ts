@@ -5,9 +5,15 @@ import {
   IsNotEmpty,
   Matches,
 } from 'class-validator';
+import { ApiProperty } from '@nestjs/swagger';
 // Sử dụng transform để nhận được dữ liệu lower case để tránh xảy ra trường hợp lúc viết thường
 // lúc viết hoa
 export class ChangePasswordUserDto {
+  @ApiProperty({
+    example: 'OldPass@123',
+    description: 'Mat khau hien tai cua nguoi dung',
+    minLength: 8,
+  })
   @IsString()
   @IsNotEmpty({ message: 'Mật khẩu không được để trống' })
   @MinLength(8, { message: 'Mật khẩu phải có ít nhất 8 ký tự' })
@@ -17,6 +23,11 @@ export class ChangePasswordUserDto {
   })
   oldPassword: string;
 
+  @ApiProperty({
+    example: 'NewPass@123',
+    description: 'Mat khau moi cua nguoi dung',
+    minLength: 8,
+  })
   @IsString()
   @IsNotEmpty({ message: 'Mật khẩu không được để trống' })
   @MinLength(8, { message: 'Mật khẩu phải có ít nhất 8 ký tự' })

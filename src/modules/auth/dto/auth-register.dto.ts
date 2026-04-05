@@ -11,11 +11,18 @@ import {
   IsNotEmpty,
   Matches,
 } from 'class-validator';
-import { Type, Transform } from 'class-transformer';
+import { Transform } from 'class-transformer';
+import { ApiProperty } from '@nestjs/swagger';
 
 // Sử dụng transform để nhận được dữ liệu lower case để tránh xảy ra trường hợp lúc viết thường
 // lúc viết hoa
 export class RegisterUserDto {
+  @ApiProperty({
+    example: 'admin01',
+    description: 'Ten dang nhap cua tai khoan',
+    minLength: 5,
+    maxLength: 30,
+  })
   @IsString({ message: 'Username phải là chuỗi ký tự' })
   @IsNotEmpty({ message: 'Username không được để trống' })
   @MinLength(5, { message: 'Username tối thiểu 5 ký tự' })
@@ -23,6 +30,11 @@ export class RegisterUserDto {
   @Transform(({ value }) => value.trim().toLowerCase())
   username: string;
 
+  @ApiProperty({
+    example: 'Admin@123',
+    description: 'Mat khau manh gom chu hoa, chu thuong, so va ky tu dac biet',
+    minLength: 8,
+  })
   @IsString()
   @IsNotEmpty({ message: 'Mật khẩu không được để trống' })
   @MinLength(8, { message: 'Mật khẩu phải có ít nhất 8 ký tự' })

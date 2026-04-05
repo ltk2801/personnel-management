@@ -36,7 +36,7 @@ export class AuthService {
     private readonly employeesService: EmployeesService,
     // import Inject Datasource for manage transaction (use DataSource for this)
     private dataSource: DataSource,
-    // import cache_manager
+    // import cache_manager de quan ly key redis
     @Inject(CACHE_MANAGER) private cacheManager: Cache,
   ) {}
 
@@ -97,7 +97,7 @@ export class AuthService {
     }
 
     // 4. Generate JWT tokens
-    const payload = { sub: user.id };
+    const payload = { sub: user.id, role: user.role };
     const access_token = this.jwtService.sign(payload);
     const refresh_token = this.jwtService.sign(payload, { expiresIn: '7d' });
 
@@ -139,6 +139,7 @@ export class AuthService {
       // Tao payload moi
       const newPayload = {
         sub: userId,
+        role: payload.role,
       };
       const new_access_token = await this.jwtService.signAsync(newPayload);
       const new_refresh_token = await this.jwtService.signAsync(newPayload, {
@@ -194,7 +195,7 @@ export class AuthService {
     // updatePassword in DB & Loggout user
     await this.usersService.updatePassword(userId, hashedPassword);
     // 4. Generate JWT tokens
-    const payload = { username: user.username, sub: user.id, role: user.role };
+    const payload = { sub: user.id, role: user.role };
     const access_token = this.jwtService.sign(payload);
     const refresh_token = this.jwtService.sign(payload, { expiresIn: '7d' });
 
@@ -206,8 +207,12 @@ export class AuthService {
   }
 
   // **** FUNCtION LOGOUT
-  logout() {
-    // clear refresh token của user trong database
-    console.log('aba');
+  async logout(userId: string) {
+    // clear refresh token của user tren redis
+    await this.cacheManager.del(`refresh_token:${userId}`);
+
+    return {
+      message: 'Logged out',
+    };
   }
 }

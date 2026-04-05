@@ -1,4 +1,9 @@
-import { Injectable, Logger } from '@nestjs/common';
+import {
+  Injectable,
+  Logger,
+  UnauthorizedException,
+  Inject,
+} from '@nestjs/common';
 import { User } from './entities/users.entity';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
@@ -7,12 +12,17 @@ import { Repository } from 'typeorm';
 import { IuserBase, IuserList } from './interfaces/users.interface';
 import { UpdateUserDto } from './dto/update-user.dto';
 
+// Import radis for delete refresh_token when delete user
+import { CACHE_MANAGER, Cache } from '@nestjs/cache-manager';
+
 @Injectable()
 export class UsersService {
   // Khai báo repository của TypeORM để có thể làm việc với database thông qua entity User
   constructor(
     @InjectRepository(User)
     private readonly userRepository: Repository<User>,
+    // import cache_manager de quan ly key redis
+    @Inject(CACHE_MANAGER) private cacheManager: Cache,
   ) {}
 
   // ***** FUNCTION FE lấy dữ liệu là id , username và password của user
@@ -40,9 +50,6 @@ export class UsersService {
     const rolesList = roles.map((r) => r.role);
     return rolesList;
   }
-
-  // ****** FUNCTION clear refresh token của user khi logout
-
   // ***** FUNCTION UPDATE PASSWORD
   async updatePassword(id: string, newPassword: string): Promise<void> {
     await this.userRepository.update(id, { password: newPassword });
@@ -53,6 +60,19 @@ export class UsersService {
     await this.userRepository.update(id, user);
     return {
       message: 'successful updated',
+    };
+  }
+
+  // ***** FUNCTION DELETE USER by ADMIN
+  async deleteUser(id: string, sub: string) {
+    // can't delete admin
+    if (id === sub) {
+      throw new UnauthorizedException('Admin cant delete admin');
+    }
+    await this.userRepository.delete(id);
+    await this.cacheManager.del(`refresh_token:${id}`);
+    return {
+      message: 'deleted successful',
     };
   }
 }

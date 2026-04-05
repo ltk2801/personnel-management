@@ -1,6 +1,7 @@
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 import { BadRequestException, Logger, ValidationPipe } from '@nestjs/common';
+import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 
 async function bootstrap() {
   // Tạo một instance Logger với tên ngữ cảnh là 'Bootstrap'
@@ -34,6 +35,28 @@ async function bootstrap() {
     }),
   );
 
+  const swaggerConfig = new DocumentBuilder()
+    .setTitle('QLNV API')
+    .setDescription('Tai lieu API cho he thong quan ly nhan vien')
+    .setVersion('1.0')
+    .addBearerAuth(
+      {
+        type: 'http',
+        scheme: 'bearer',
+        bearerFormat: 'JWT',
+        description: 'Nhap access token de goi cac API duoc bao ve',
+      },
+      'access-token',
+    )
+    .build();
+
+  const swaggerDocument = SwaggerModule.createDocument(app, swaggerConfig);
+  SwaggerModule.setup('api-docs', app, swaggerDocument, {
+    swaggerOptions: {
+      persistAuthorization: true,
+    },
+  });
+
   // 3. Cấu hình Port
   const PORT = process.env.PORT || 3000;
 
@@ -41,6 +64,7 @@ async function bootstrap() {
 
   // 4. Thông báo chạy Port thành công
   logger.log(`🚀 Server đang chạy tại: http://localhost:${PORT}`);
+  logger.log(`📘 Swagger docs: http://localhost:${PORT}/api-docs`);
   logger.log(`📅 Ngày bắt đầu: ${new Date().toLocaleDateString('vi-VN')}`);
 }
 
