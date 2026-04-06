@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import { Department } from './entities/department.entity';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
@@ -68,11 +68,39 @@ export class DepartmentsService {
 
   // Export data department to excel
 
-  async exportDepartmentsToExcel() {
+  async exportDepartmentsToExcel(
+    fields?: string,
+    page?: number,
+    limit?: number,
+  ) {
+    // Dinh nghia danh sach cac cot hop le ma DB co
+    const validFields = ['id', 'isActive', 'name', 'description'];
+    //  Xác định các keys cần xuất ( Nếu client không gửi thì lấy tất cả )
+    let selectedFields: any[] = validFields;
+    if (fields) {
+      // Tách chuỗi, lọc bỏ khoảng trắng và chỉ giữ lại những field nằm trong validFields
+      const requestedFields = fields.split(',').map((f) => f.trim());
+      const filteredFields = requestedFields.filter((f) =>
+        validFields.includes(f),
+      );
+
+      // Nếu sau khi lọc vẫn còn ít nhất 1 field đúng thì mới ghi đè
+      if (filteredFields.length > 0) {
+        selectedFields = filteredFields;
+      }
+    }
+
     // Lấy dữ liệu từ DB
-    const departments = await this.departmentsRepository.find({
-      select: ['id', 'name', 'description', 'isActive'],
-    });
+    const findOptions: any = {
+      select: selectedFields,
+      order: { id: 'ASC' },
+    };
+    // neu co page va limit, co nghia la muon phan trang =>
+    if (page && limit) {
+      findOptions.take = limit;
+      findOptions.skip = (page - 1) * limit;
+    }
+    const departments = await this.departmentsRepository.find(findOptions);
     // Chuyển đổi dữ liệu lấy về thành header,key,value
     const excelColumns =
       this.excelExportService.autoGenerateColumns(departments);

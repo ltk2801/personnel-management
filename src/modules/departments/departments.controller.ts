@@ -12,6 +12,7 @@ import {
   UseInterceptors,
   ClassSerializerInterceptor,
   Res,
+  Query,
 } from '@nestjs/common';
 import { DepartmentsService } from './departments.service';
 import { AuthGuard } from '../../common/guards/auth.guard';
@@ -77,8 +78,18 @@ export class DepartmentsController {
   // Export Data to Excel
   @UseGuards(AuthGuard)
   @Get('export-data')
-  async exportData(@Res({ passthrough: true }) res: Response) {
-    const fileStream = await this.departmentsService.exportDepartmentsToExcel();
+  async exportData(
+    // Neu khong co bat cu query nao gui vao thi se export all du lieu
+    @Query('fields') fields: string, // Client gui ?fields = id,name hoac ?fiedls = name,des de export duoc dung du lieu
+    @Query('page') page: number, // Neu muon lay du lieu tu page nao thi nhap vao day
+    @Query('limit') limit: number, // So dong du lieu trong 1 trang muon lay
+    @Res({ passthrough: true }) res: Response,
+  ) {
+    const fileStream = await this.departmentsService.exportDepartmentsToExcel(
+      fields,
+      page,
+      limit,
+    );
     res.setHeader(
       'Content-Type',
       'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
@@ -89,6 +100,11 @@ export class DepartmentsController {
     );
     return new StreamableFile(fileStream);
   }
+
+  // Import File Excel to DB
+  @UseGuards(AuthGuard, RolesGuard)
+  @Roles(Role.Admin)
+  @Post('import-data')
 
   // Update a department
   @ApiOperation({ summary: 'Cap nhat phong ban' })
