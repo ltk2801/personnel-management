@@ -41,16 +41,16 @@ export class Department {
   employees: Employee[];
 
   // --- TRACKING (Giúp bạn quản lý dữ liệu tốt hơn) ---
-  @CreateDateColumn({ name: 'created_at' })
+  @CreateDateColumn({ name: 'createdAt' })
   // eslint-disable-next-line @typescript-eslint/no-unsafe-call
   @Exclude()
   createdAt: Date;
 
-  @UpdateDateColumn({ name: 'updated_at' })
+  @UpdateDateColumn({ name: 'updatedAt' })
   @Exclude()
   updatedAt: Date;
 
-  @DeleteDateColumn({ name: 'deleted_at' })
+  @DeleteDateColumn({ name: 'deletedAt' })
   @Exclude() // Hỗ trợ Soft Delete (Xóa ảo)
   deletedAt: Date;
 

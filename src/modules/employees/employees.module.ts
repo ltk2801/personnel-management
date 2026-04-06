@@ -1,11 +1,21 @@
-import { Module } from '@nestjs/common';
+import { forwardRef, Module } from '@nestjs/common';
 import { EmployeesController } from './employees.controller';
 import { EmployeesService } from './employees.service';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { Employee } from './entities/employee.entity';
+import { AuthModule } from '../auth/auth.module';
+import { DepartmentsModule } from '../departments/departments.module';
+import { JobsModule } from '../jobs/jobs.module';
+import { UsersModule } from '../users/users.module';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([Employee])],
+  imports: [
+    forwardRef(() => AuthModule),
+    TypeOrmModule.forFeature([Employee]),
+    DepartmentsModule,
+    JobsModule,
+    UsersModule,
+  ],
   controllers: [EmployeesController],
   providers: [EmployeesService],
   exports: [EmployeesService],

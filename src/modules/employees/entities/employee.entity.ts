@@ -21,12 +21,12 @@ export class Employee {
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
-  @ApiPropertyOptional({ example: 'Nguyen', description: 'Ho cua nhan vien' })
-  @Column({ type: 'varchar', length: 100, nullable: true })
+  @ApiPropertyOptional({ example: 'An', description: 'Ten cua nhan vien' })
+  @Column({ type: 'varchar', length: 10, nullable: true })
   firstName: string;
 
-  @ApiPropertyOptional({ example: 'An', description: 'Ten cua nhan vien' })
-  @Column({ type: 'varchar', length: 100, nullable: true })
+  @ApiPropertyOptional({ example: 'Nguyen', description: 'Ho cua nhan vien' })
+  @Column({ type: 'varchar', length: 50, nullable: true })
   lastName: string;
 
   @ApiPropertyOptional({
@@ -40,7 +40,7 @@ export class Employee {
     example: '0901234567',
     description: 'So dien thoai cua nhan vien',
   })
-  @Column({ type: 'varchar', length: 20, unique: true, nullable: true })
+  @Column({ type: 'varchar', length: 10, unique: true, nullable: true })
   phoneNumber: string;
 
   @ApiPropertyOptional({
@@ -87,12 +87,12 @@ export class Employee {
 
   // --- TRACKING ---
 
-  @CreateDateColumn({ name: 'created_at' })
+  @CreateDateColumn({ name: 'createdAt' })
   createdAt: Date;
 
-  @UpdateDateColumn({ name: 'updated_at' })
+  @UpdateDateColumn({ name: 'updatedAt' })
   updatedAt: Date;
 
-  @DeleteDateColumn({ name: 'deleted_at' })
+  @DeleteDateColumn({ name: 'deletedAt' })
   deletedAt: Date;
 }

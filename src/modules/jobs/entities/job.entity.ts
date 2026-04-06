@@ -5,6 +5,7 @@ import {
   OneToMany,
   CreateDateColumn,
   UpdateDateColumn,
+  DeleteDateColumn,
 } from 'typeorm';
 import { Employee } from '../../employees/entities/employee.entity';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
@@ -49,9 +50,14 @@ export class Job {
   @OneToMany(() => Employee, (employee) => employee.job)
   employees: Employee[];
 
-  @CreateDateColumn({ name: 'created_at' })
+  // TRACKING
+
+  @CreateDateColumn({ name: 'createdAt' })
   createdAt: Date;
 
-  @UpdateDateColumn({ name: 'updated_at' })
+  @UpdateDateColumn({ name: 'updatedAt' })
   updatedAt: Date;
+
+  @DeleteDateColumn({ name: 'deleteAt' })
+  deleteAt: Date;
 }

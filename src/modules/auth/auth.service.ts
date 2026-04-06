@@ -109,6 +109,7 @@ export class AuthService {
     );
 
     const check = await this.cacheManager.get(`refresh_token:${payload.sub}`);
+    Logger.log(check);
     return {
       access_token,
       refresh_token,

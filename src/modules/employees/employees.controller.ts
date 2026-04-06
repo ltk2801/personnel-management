@@ -5,6 +5,10 @@ import {
   Param,
   Delete,
   Patch,
+  UseGuards,
+  HttpCode,
+  HttpStatus,
+  Request,
 } from '@nestjs/common';
 import { EmployeesService } from './employees.service';
 import { Employee } from './entities/employee.entity';
@@ -14,7 +18,19 @@ import {
   ApiOperation,
   ApiParam,
   ApiTags,
+  ApiBearerAuth,
 } from '@nestjs/swagger';
+
+// Import Dto
+import { UpdateEmployeeDto } from './dto/update-employee.dto';
+
+// Import Auth
+import { AuthGuard } from 'src/common/guards/auth.guard';
+import { Role } from 'src/common/enum/role.enum';
+import { Roles } from 'src/common/decorators/roles.decorator';
+import { RolesGuard } from 'src/common/guards/role.guard';
+import { UpdateProfileDto } from './dto/update-profile.dto';
+//
 
 @ApiTags('Employees')
 @Controller('employees')
@@ -38,14 +54,31 @@ export class EmployeesController {
     return this.employeesService.findOne(id);
   }
 
-  // update an employee
-  @ApiOperation({ summary: 'Cap nhat nhan vien' })
+  //  update Profile
+  @ApiOperation({ summary: 'Cap nhat các thông tin của bản thân ' })
+  @ApiBearerAuth('access-token')
+  @ApiBody({ type: UpdateProfileDto })
+  @ApiOkResponse({ description: 'Cap nhat thông tin cá nhân thanh cong' })
+  @UseGuards(AuthGuard)
+  @Patch('updateProfile')
+  updateProfile(@Request() req, @Body() UpdateProfileDto: UpdateProfileDto) {
+    return this.employeesService.updateProfile(req.user.sub, UpdateProfileDto);
+  }
+
+  // update an employee by Admin/Manager
+  @ApiOperation({ summary: 'Cap nhat nhan vien by Admin/Manager' })
   @ApiParam({ name: 'id', description: 'Employee ID' })
-  @ApiBody({ type: Employee })
+  @ApiBearerAuth('access-token')
+  @ApiBody({ type: UpdateEmployeeDto })
   @ApiOkResponse({ description: 'Cap nhat nhan vien thanh cong' })
+  @UseGuards(AuthGuard, RolesGuard)
+  @Roles(Role.Admin, Role.Manager)
   @Patch(':id')
-  update(@Param('id') id: string, @Body() employee: Employee) {
-    return this.employeesService.update(id, employee);
+  updateEmployee(
+    @Param('id') id: string,
+    @Body() updateEmployeeDto: UpdateEmployeeDto,
+  ) {
+    return this.employeesService.updateAnEmployee(id, updateEmployeeDto);
   }
 
   // delete an employee
