@@ -43,7 +43,7 @@ import type { Response } from 'express';
 export class JobsController {
   constructor(private readonly jobsService: JobsService) {}
 
-  // // Import File Excel to DB
+  // Import File Excel to DB
   @ApiOperation({ summary: 'Import danh sach job tu file Excel' })
   @ApiBearerAuth('access-token')
   @ApiConsumes('multipart/form-data')
@@ -60,9 +60,9 @@ export class JobsController {
     },
   })
   @ApiOkResponse({ description: 'Import file Excel job thanh cong' })
+  @UseGuards(AuthGuard)
   // @UseGuards(AuthGuard, RolesGuard)
   // @Roles(Role.Admin)
-  @UseGuards(AuthGuard)
   @UseInterceptors(FileInterceptor('file'))
   @Post('import-data')
   async importData(@UploadedFile() file: Express.Multer.File) {

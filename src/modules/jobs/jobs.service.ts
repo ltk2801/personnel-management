@@ -2,11 +2,15 @@ import { BadRequestException, Injectable } from '@nestjs/common';
 import { Job } from './entities/job.entity';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
+import { plainToInstance } from 'class-transformer';
+import { validate } from 'class-validator';
 
 // Import DTO
 import { JobCreateDto } from './dto/job-create-dto';
+import { JobImportDto } from './dto/job-import-dto';
 import { ExcelExportService } from 'src/common/excel/excel.export.service';
 import { ExcelImportService } from 'src/common/excel/excel.import.service';
+import { JobTransformer } from './transform/job.transfrom';
 
 @Injectable()
 export class JobsService {
@@ -16,6 +20,16 @@ export class JobsService {
     private readonly excelExportServices: ExcelExportService,
     private readonly excelImportService: ExcelImportService,
   ) {}
+
+  private async validateImportDto(dto: JobImportDto): Promise<string[]> {
+    const dtoInstance = plainToInstance(JobImportDto, dto);
+    const validationErrors = await validate(dtoInstance);
+
+    return validationErrors.flatMap((error) =>
+      Object.values(error.constraints ?? {}),
+    );
+  }
+
   // Check Min & Max Salary
   private async validateSalary(minSalary?: number, maxSalary?: number) {
     return minSalary <= maxSalary ? true : false;
@@ -85,60 +99,23 @@ export class JobsService {
     const importedTitles = new Set<string>();
 
     const importResult =
-      await this.excelImportService.importFromBuffer<JobCreateDto>(fileBuffer, {
+      await this.excelImportService.importFromBuffer<JobImportDto>(fileBuffer, {
         validFields: ['title', 'minSalary', 'maxSalary', 'isActive'],
-        requiredFields: ['title'],
+        requiredFields: ['title', 'minSalary', 'maxSalary'],
         fieldLabels: {
           title: 'Tên chức vụ',
           minSalary: 'Lương tối thiểu',
           maxSalary: 'Lương tối đa',
           isActive: 'Trạng thái',
         },
-        valueTransformers: {
-          title: (value) => String(value ?? '').trim(),
-          minSalary: (value) => Number(value),
-          maxSalary: (value) => Number(value),
-          isActive: (value) => {
-            if (
-              value === null ||
-              value === undefined ||
-              String(value).trim() === ''
-            ) {
-              return true;
-            }
-
-            if (typeof value === 'boolean') {
-              return value;
-            }
-
-            const normalizedValue = String(value).trim().toLowerCase();
-            return ['true', '1', 'active', 'yes', 'co', 'on'].includes(
-              normalizedValue,
-            );
-          },
-        },
+        rowTransformer: (row) => JobTransformer.toDto(row),
         rowValidator: async (row, context) => {
-          const errors: string[] = [];
-          const title = String(row.title ?? '').trim();
+          const dto = JobTransformer.toDto(row);
+          const errors = await this.validateImportDto(dto);
+          const title = dto.title.trim();
           const normalizedTitle = title.toLowerCase();
-          const minSalary = Number(row.minSalary);
-          const maxSalary = Number(row.maxSalary);
-
-          if (!title) {
-            errors.push('Tên chức vụ không được để trống');
-          }
-
-          if (title.length > 100) {
-            errors.push('Tên chức vụ không được vượt quá 100 ký tự');
-          }
-
-          if (!Number.isFinite(minSalary) || minSalary < 0) {
-            errors.push('Lương tối thiểu phải là số không âm');
-          }
-
-          if (!Number.isFinite(maxSalary) || maxSalary < 0) {
-            errors.push('Lương tối đa phải là số không âm');
-          }
+          const minSalary = dto.minSalary;
+          const maxSalary = dto.maxSalary;
 
           if (
             Number.isFinite(minSalary) &&
@@ -160,20 +137,10 @@ export class JobsService {
             importedTitles.add(normalizedTitle);
           }
 
-          if (!('isActive' in row)) {
-            row.isActive = true;
-          }
-
           return errors.map(
             (message) => `Dòng ${context.rowNumber}: ${message}`,
           );
         },
-        rowTransformer: (row) => ({
-          title: String(row.title).trim(),
-          minSalary: Number(row.minSalary),
-          maxSalary: Number(row.maxSalary),
-          isActive: Boolean(row.isActive),
-        }),
       });
 
     if (importResult.rows.length > 0) {

@@ -2,6 +2,8 @@ import { Injectable, Logger } from '@nestjs/common';
 import { Department } from './entities/department.entity';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
+import { plainToInstance } from 'class-transformer';
+import { validate } from 'class-validator';
 
 // import các Data Transfer Object (DTO) để có thể sử dụng trong service
 import { DepartmentCreateDto } from './dto/department-create-dto';
@@ -13,6 +15,9 @@ import {
   IDepartmentList,
 } from './interfaces/department.interface';
 import { ExcelExportService } from 'src/common/excel/excel.export.service';
+import { DepartmentImportDto } from './dto/department-import-dto';
+import { DepartmentTransformer } from './transform/department.transfrom';
+import { ExcelImportService } from 'src/common/excel/excel.import.service';
 
 @Injectable()
 export class DepartmentsService {
@@ -21,7 +26,17 @@ export class DepartmentsService {
     @InjectRepository(Department)
     private departmentsRepository: Repository<Department>,
     private excelExportService: ExcelExportService,
+    private excelImportService: ExcelImportService,
   ) {}
+
+  private async validateImportDto(dto: DepartmentImportDto): Promise<string[]> {
+    const dtoInstance = plainToInstance(DepartmentImportDto, dto);
+    const validationErrors = await validate(dtoInstance);
+
+    return validationErrors.flatMap((error) =>
+      Object.values(error.constraints ?? {}),
+    );
+  }
 
   // Các phương thức để làm việc với dữ liệu phòng ban, sẽ được gọi từ controller
   // Khi FE chỉ cần lấy dữ liệu là id và name của phòng ban
@@ -66,7 +81,7 @@ export class DepartmentsService {
     return { deleted: true };
   }
 
-  // Export data department to excel
+  // **************** Export data department to excel
 
   async exportDepartmentsToExcel(
     fields?: string,
@@ -92,5 +107,71 @@ export class DepartmentsService {
       excelColumns,
       departments,
     );
+  }
+
+  // ************ import data department to db
+  async importDepartmentsFromExcel(fileBuffer: Buffer) {
+    const existingDepartments = await this.departmentsRepository.find({
+      select: ['name'],
+    });
+    const existingNames = new Set(
+      existingDepartments.map((depart) => depart.name.trim().toLowerCase()),
+    );
+    const importedNames = new Set<string>();
+
+    const importResult =
+      await this.excelImportService.importFromBuffer<DepartmentImportDto>(
+        fileBuffer,
+        {
+          validFields: ['name', 'description', 'isActive'],
+          requiredFields: ['name', 'description', 'isActive'],
+          fieldLabels: {
+            name: 'Tên phòng ban',
+            description: 'Mô tả về phòng ban',
+            isActive: 'Trạng thái',
+          },
+          rowTransformer: (row) => DepartmentTransformer.toDto(row),
+          rowValidator: async (row, context) => {
+            const dto = DepartmentTransformer.toDto(row);
+            const errors = await this.validateImportDto(dto);
+            const name = dto.name.trim();
+            const normalizedName = name.toLowerCase();
+
+            if (name && existingNames.has(normalizedName)) {
+              errors.push('Tên phòng ban đã tồn tại trong hệ thống');
+            }
+
+            if (name && importedNames.has(normalizedName)) {
+              errors.push('Tên phòng ban bị trùng trong file import');
+            }
+
+            if (errors.length === 0 && name) {
+              importedNames.add(normalizedName);
+            }
+
+            return errors.map(
+              (message) => `Dòng ${context.rowNumber}: ${message}`,
+            );
+          },
+        },
+      );
+
+    if (importResult.rows.length > 0) {
+      const departments = this.departmentsRepository.create(importResult.rows);
+      await this.departmentsRepository.save(departments);
+    }
+
+    return {
+      message:
+        importResult.errorCount > 0
+          ? 'Import department hoàn tất, có một số dòng không hợp lệ'
+          : 'Import department thành công',
+      summary: {
+        totalRows: importResult.totalRows,
+        successCount: importResult.successCount,
+        errorCount: importResult.errorCount,
+      },
+      errors: importResult.errors,
+    };
   }
 }

@@ -13,6 +13,8 @@ import {
   ClassSerializerInterceptor,
   Res,
   Query,
+  UploadedFile,
+  BadRequestException,
 } from '@nestjs/common';
 import { DepartmentsService } from './departments.service';
 import { AuthGuard } from '../../common/guards/auth.guard';
@@ -32,7 +34,10 @@ import {
   ApiProduces,
   ApiQuery,
   ApiTags,
+  ApiConsumes,
 } from '@nestjs/swagger';
+
+import { FileInterceptor } from '@nestjs/platform-express';
 import type { Response } from 'express';
 
 @ApiTags('Departments')
@@ -132,11 +137,35 @@ export class DepartmentsController {
     );
     return new StreamableFile(fileStream);
   }
-
   // Import File Excel to DB
-  @UseGuards(AuthGuard, RolesGuard)
-  @Roles(Role.Admin)
+  @ApiOperation({ summary: 'Import danh sach department tu file Excel' })
+  @ApiBearerAuth('access-token')
+  @ApiConsumes('multipart/form-data')
+  @ApiBody({
+    schema: {
+      type: 'object',
+      properties: {
+        file: {
+          type: 'string',
+          format: 'binary',
+        },
+      },
+      required: ['file'],
+    },
+  })
+  @ApiOkResponse({ description: 'Import file Excel department thanh cong' })
+  @UseGuards(AuthGuard)
+  // @UseGuards(AuthGuard, RolesGuard)
+  // @Roles(Role.Admin)
+  @UseInterceptors(FileInterceptor('file'))
   @Post('import-data')
+  async importData(@UploadedFile() file: Express.Multer.File) {
+    if (!file?.buffer) {
+      throw new BadRequestException('Vui lòng tải lên file Excel hợp lệ');
+    }
+
+    return this.departmentsService.importDepartmentsFromExcel(file.buffer);
+  }
 
   // Update a department
   @ApiOperation({ summary: 'Cap nhat phong ban' })
