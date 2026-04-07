@@ -15,6 +15,7 @@ import { UpdateProfileDto } from './dto/update-profile.dto';
 import { UsersService } from '../users/users.service';
 
 /////////
+import { ExcelExportService } from 'src/common/excel/excel.export.service';
 
 @Injectable()
 export class EmployeesService {
@@ -24,6 +25,7 @@ export class EmployeesService {
     private readonly jobsService: JobsService,
     private readonly departmentsService: DepartmentsService,
     private readonly usersService: UsersService,
+    private readonly excelExportService: ExcelExportService,
   ) {}
 
   private async validateUniqueness(
@@ -135,4 +137,66 @@ export class EmployeesService {
     await this.employeesRepository.delete(id);
     return { deleted: true };
   }
+
+  // *************************** GET FULL INFO EMPLOYEE
+  async getEmployeeDetails(id: string) {
+    return await this.employeesRepository
+      .createQueryBuilder('employee') // 'employee' là alias (bí danh)
+      // // Join với bảng User (1-1)
+      // .leftJoinAndSelect('employee.user', 'users')
+      // Join với bảng Job (n-1)
+      .leftJoinAndSelect('employee.job', 'jobs')
+      // Join với bảng Department (n-1)
+      .leftJoinAndSelect('employee.department', 'departments')
+      // Điều kiện lọc
+      .where('employee.id = :id', { id })
+      // Thực thi
+      .getOne();
+  }
+
+  // Export data employees to excel
+
+  // async exportDepartmentsToExcel(
+  //   fields?: string,
+  //   page?: number,
+  //   limit?: number,
+  // ) {
+  //   // Dinh nghia danh sach cac cot hop le ma DB co
+  //   const validFields = ['id', 'isActive', 'name', 'description'];
+  //   //  Xác định các keys cần xuất ( Nếu client không gửi thì lấy tất cả )
+  //   let selectedFields: any[] = validFields;
+  //   if (fields) {
+  //     // Tách chuỗi, lọc bỏ khoảng trắng và chỉ giữ lại những field nằm trong validFields
+  //     const requestedFields = fields.split(',').map((f) => f.trim());
+  //     const filteredFields = requestedFields.filter((f) =>
+  //       validFields.includes(f),
+  //     );
+
+  //     // Nếu sau khi lọc vẫn còn ít nhất 1 field đúng thì mới ghi đè
+  //     if (filteredFields.length > 0) {
+  //       selectedFields = filteredFields;
+  //     }
+  //   }
+
+  //   // Lấy dữ liệu từ DB
+  //   const findOptions: any = {
+  //     select: selectedFields,
+  //     order: { id: 'ASC' },
+  //   };
+  //   // neu co page va limit, co nghia la muon phan trang =>
+  //   if (page && limit) {
+  //     findOptions.take = limit;
+  //     findOptions.skip = (page - 1) * limit;
+  //   }
+  //   const departments = await this.departmentsRepository.find(findOptions);
+  //   // Chuyển đổi dữ liệu lấy về thành header,key,value
+  //   const excelColumns =
+  //     this.excelExportService.autoGenerateColumns(departments);
+
+  //   // Gọi service export file excel
+  //   return this.excelExportService.generateExcelStream(
+  //     excelColumns,
+  //     departments,
+  //   );
+  // }
 }

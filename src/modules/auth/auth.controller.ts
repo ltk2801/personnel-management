@@ -24,6 +24,7 @@ import {
   ApiTags,
   ApiUnauthorizedResponse,
 } from '@nestjs/swagger';
+import { GetUser } from 'src/common/decorators/user.decorator';
 
 @ApiTags('Auth')
 @Controller('auth')
@@ -69,8 +70,8 @@ export class AuthController {
   @ApiOkResponse({ description: 'Lay profile thanh cong' })
   @UseGuards(AuthGuard)
   @Get('profile')
-  getProfile(@Request() req) {
-    return req.user; // Thông tin user đã được đính kèm vào request trong AuthGuard
+  async getProfile(@GetUser() user: any) {
+    return this.authService.getProfile(user.sub); // Thông tin user đã được đính kèm vào request trong AuthGuard (Su dung decorator)
   }
 
   // Logout

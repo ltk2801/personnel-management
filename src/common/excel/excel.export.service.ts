@@ -10,19 +10,30 @@ export interface ExcelColumn {
 
 @Injectable()
 export class ExcelExportService {
+  private formatCellValue(value: unknown): string {
+    if (value === null || value === undefined) {
+      return '';
+    }
+
+    if (value instanceof Date) {
+      return value.toISOString();
+    }
+
+    if (typeof value === 'object') {
+      return JSON.stringify(value);
+    }
+
+    return String(value);
+  }
+
   private calculateColumnWidth(
     header: string,
     data: any[],
     key: string,
   ): number {
     const maxContentLength = data.reduce((max, item) => {
-      const value = item?.[key];
-
-      if (value === null || value === undefined) {
-        return max;
-      }
-
-      return Math.max(max, String(value).length);
+      const cellValueLength = this.formatCellValue(item?.[key]).length;
+      return Math.max(max, cellValueLength);
     }, header.length);
 
     return Math.min(Math.max(maxContentLength + 4, 14), 40);
@@ -80,7 +91,7 @@ export class ExcelExportService {
     headerRow.eachCell((cell) => {
       cell.font = {
         name: 'Calibri',
-        size: 12,
+        size: 15,
         bold: true,
         color: { argb: 'FFFFFFFF' },
       };
@@ -106,8 +117,7 @@ export class ExcelExportService {
     // Duyệt dữ liệu và commit từng dòng để tiết kiệm RAM
     data.forEach((item, index) => {
       const row = worksheet.addRow(item);
-      row.height = 22;
-
+      row.height = 24;
       row.eachCell((cell) => {
         cell.alignment = {
           vertical: 'middle',
@@ -116,7 +126,7 @@ export class ExcelExportService {
         };
         cell.font = {
           name: 'Calibri',
-          size: 11,
+          size: 14,
           color: { argb: 'FF111827' },
         };
         cell.fill = {
@@ -154,7 +164,39 @@ export class ExcelExportService {
     return validKeys.map((key) => ({
       header: key.toUpperCase(),
       key: key,
-      width: 20,
     }));
+  }
+
+  /* Tạo 1 service để phân trang và chọn theo options của client để export */
+  optionsPagination(
+    fields?: string,
+    page?: number,
+    limit?: number,
+    validFields?: any[],
+  ) {
+    //  Xác định các keys cần xuất ( Nếu client không gửi thì lấy tất cả )
+    let selectedFields: any[] = validFields;
+    if (fields) {
+      // Tách chuỗi, lọc bỏ khoảng trắng và chỉ giữ lại những field nằm trong validFields
+      const requestedFields = fields.split(',').map((f) => f.trim());
+      const filteredFields = requestedFields.filter((f) =>
+        validFields.includes(f),
+      );
+      // Nếu sau khi lọc vẫn còn ít nhất 1 field đúng thì mới ghi đè
+      if (filteredFields.length > 0) {
+        selectedFields = filteredFields;
+      }
+    }
+    // Lấy dữ liệu từ DB
+    const findOptions: any = {
+      select: selectedFields,
+      order: { id: 'ASC' },
+    };
+    // neu co page va limit, co nghia la muon phan trang =>
+    if (page && limit) {
+      findOptions.take = limit;
+      findOptions.skip = (page - 1) * limit;
+    }
+    return findOptions;
   }
 }

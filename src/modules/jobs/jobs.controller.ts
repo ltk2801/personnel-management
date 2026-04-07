@@ -1,4 +1,5 @@
 import {
+  StreamableFile,
   Controller,
   Get,
   Post,
@@ -7,6 +8,9 @@ import {
   Delete,
   Patch,
   UseGuards,
+  Query,
+  Res,
+  Logger,
 } from '@nestjs/common';
 import { JobsService } from './jobs.service';
 import { Job } from './entities/job.entity';
@@ -26,11 +30,36 @@ import { Role } from 'src/common/enum/role.enum';
 import { Roles } from 'src/common/decorators/roles.decorator';
 import { JobCreateDto } from './dto/job-create-dto';
 
+import type { Response } from 'express';
+
 @ApiTags('Jobs')
 @Controller('jobs')
 export class JobsController {
   constructor(private readonly jobsService: JobsService) {}
 
+  // Export Data to Excel
+  @UseGuards(AuthGuard)
+  @Get('export-data')
+  async exportData(
+    // Neu khong co bat cu query nao gui vao thi se export all du lieu
+    @Query('fields') fields: string, // Client gui ?fields = id,name hoac ?fiedls = name,des de export duoc dung du lieu
+    @Query('page') page: number, // Neu muon lay du lieu tu page nao thi nhap vao day
+    @Query('limit') limit: number, // So dong du lieu trong 1 trang muon lay
+    @Res({ passthrough: true }) res: Response,
+  ) {
+    const fileStream = await this.jobsService.exportJobssToExcel(
+      fields,
+      page,
+      limit,
+    );
+
+    res.setHeader(
+      'Content-Type',
+      'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+    );
+    res.setHeader('Content-Disposition', 'attachment; filename="jobs.xlsx"');
+    return new StreamableFile(fileStream);
+  }
   // Get all jobs
   @ApiOperation({ summary: 'Lay danh sach job' })
   @ApiOkResponse({ description: 'Lay danh sach job thanh cong' })

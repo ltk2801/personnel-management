@@ -5,12 +5,14 @@ import { Repository } from 'typeorm';
 
 // Import DTO
 import { JobCreateDto } from './dto/job-create-dto';
+import { ExcelExportService } from 'src/common/excel/excel.export.service';
 
 @Injectable()
 export class JobsService {
   constructor(
     @InjectRepository(Job)
     private jobsRepository: Repository<Job>,
+    private readonly excelExportServices: ExcelExportService,
   ) {}
   // Check Min & Max Salary
   private async validateSalary(minSalary?: number, maxSalary?: number) {
@@ -47,5 +49,27 @@ export class JobsService {
   async remove(id: string) {
     await this.jobsRepository.delete(id);
     return { deleted: true };
+  }
+  // Export data jobs to excel
+
+  async exportJobssToExcel(fields?: string, page?: number, limit?: number) {
+    // Dinh nghia danh sach cac cot hop le ma DB co
+    const validFields = ['id', 'minSalary', 'maxSalary', 'isActive', 'title'];
+
+    // Su dung Ham lay ra field, phan trang
+    const findOptions = await this.excelExportServices.optionsPagination(
+      fields,
+      page,
+      limit,
+      validFields,
+    );
+
+    const jobs = await this.jobsRepository.find(findOptions);
+
+    // Chuyển đổi dữ liệu lấy về thành header,key,value
+    const excelColumns = this.excelExportServices.autoGenerateColumns(jobs);
+
+    // Gọi service export file excel
+    return this.excelExportServices.generateExcelStream(excelColumns, jobs);
   }
 }

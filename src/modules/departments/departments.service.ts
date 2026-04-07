@@ -75,31 +75,13 @@ export class DepartmentsService {
   ) {
     // Dinh nghia danh sach cac cot hop le ma DB co
     const validFields = ['id', 'isActive', 'name', 'description'];
-    //  Xác định các keys cần xuất ( Nếu client không gửi thì lấy tất cả )
-    let selectedFields: any[] = validFields;
-    if (fields) {
-      // Tách chuỗi, lọc bỏ khoảng trắng và chỉ giữ lại những field nằm trong validFields
-      const requestedFields = fields.split(',').map((f) => f.trim());
-      const filteredFields = requestedFields.filter((f) =>
-        validFields.includes(f),
-      );
-
-      // Nếu sau khi lọc vẫn còn ít nhất 1 field đúng thì mới ghi đè
-      if (filteredFields.length > 0) {
-        selectedFields = filteredFields;
-      }
-    }
-
-    // Lấy dữ liệu từ DB
-    const findOptions: any = {
-      select: selectedFields,
-      order: { id: 'ASC' },
-    };
-    // neu co page va limit, co nghia la muon phan trang =>
-    if (page && limit) {
-      findOptions.take = limit;
-      findOptions.skip = (page - 1) * limit;
-    }
+    // Su dung ham
+    const findOptions = await this.excelExportService.optionsPagination(
+      fields,
+      page,
+      limit,
+      validFields,
+    );
     const departments = await this.departmentsRepository.find(findOptions);
     // Chuyển đổi dữ liệu lấy về thành header,key,value
     const excelColumns =

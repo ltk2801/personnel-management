@@ -23,6 +23,14 @@ import { EmployeesService } from '../employees/employees.service';
 // Import radis for set refresh_token
 import { CACHE_MANAGER, Cache } from '@nestjs/cache-manager';
 
+// Import Entity
+import { Job } from '../jobs/entities/job.entity';
+import { Department } from '../departments/entities/department.entity';
+import { Employee } from '../employees/entities/employee.entity';
+
+import { plainToInstance } from 'class-transformer';
+import { AuthFullInfoReponseDto } from './dto/auth-full-info.dto';
+
 //  REFRESH_TOKEN ttl
 const REFRESH_TOKEN_TTL = 7 * 24 * 60 * 60; // 7day
 
@@ -65,6 +73,7 @@ export class AuthService {
           password: hashedPassword,
           employeeId: savedEmployee.id, // TypeORM tu trich xuat ID tu project nay
         });
+        const newDept = this.employeesService.createEmpty;
         // luu user vao db
         return await manager.save(newUser);
       } catch (error) {
@@ -109,7 +118,6 @@ export class AuthService {
     );
 
     const check = await this.cacheManager.get(`refresh_token:${payload.sub}`);
-    Logger.log(check);
     return {
       access_token,
       refresh_token,
@@ -215,5 +223,38 @@ export class AuthService {
     return {
       message: 'Logged out',
     };
+  }
+
+  // ***** FUNCTION GET FULL INFO USER LOGGIN
+  async getProfile(userId: string): Promise<AuthFullInfoReponseDto> {
+    const rawData = await this.dataSource
+      .getRepository(User)
+      .createQueryBuilder('user')
+      .leftJoin(Employee, 'employee', 'employee.id = user.employeeId')
+      .leftJoin(Department, 'dept', 'dept.id = employee.departmentId')
+      .leftJoin(Job, 'job', 'job.id = employee.jobId')
+      .select([
+        'user.id AS idUser',
+        'user.username AS username',
+        'user.isActive AS isActive',
+        'user.role AS role',
+        'employee.id AS employeeId',
+        'employee.email AS email',
+        'employee.hireDate AS hireDate',
+        'employee.lastName AS lastName',
+        'employee.firstName AS firstName',
+        'employee.phoneNumber AS phoneNumber',
+        'dept.id AS departmentId',
+        'dept.name AS departmentName',
+        'dept.description AS departmentDescription',
+        'job.id AS jobId',
+        'job.title AS title',
+        'job.minSalary AS minSalary',
+        'job.maxSalary AS maxSalary',
+      ])
+      .where('user.id = :userId', { userId })
+      .getRawOne<AuthFullInfoReponseDto>(); // Ép kiểu trực tiếp tại đây
+
+    return rawData;
   }
 }

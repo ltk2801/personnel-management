@@ -4,9 +4,10 @@ import { JobsService } from './jobs.service';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { Job } from './entities/job.entity';
 import { AuthModule } from '../auth/auth.module';
+import { ExcelModule } from 'src/common/excel/excel.module';
 
 @Module({
-  imports: [AuthModule, TypeOrmModule.forFeature([Job])],
+  imports: [ExcelModule, AuthModule, TypeOrmModule.forFeature([Job])],
   controllers: [JobsController],
   providers: [JobsService],
   exports: [JobsService],

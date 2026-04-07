@@ -54,6 +54,12 @@ export class EmployeesController {
     return this.employeesService.findOne(id);
   }
 
+  // Get a full info employee by id
+  @Get('full-info/:id')
+  async getFullInfo(@Param('id') id: string) {
+    return this.employeesService.getEmployeeDetails(id);
+  }
+
   //  update Profile
   @ApiOperation({ summary: 'Cap nhat các thông tin của bản thân ' })
   @ApiBearerAuth('access-token')
